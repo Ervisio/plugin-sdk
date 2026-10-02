@@ -31,7 +31,7 @@ Then turn on developer mode in Ervisio and load `dist/hello` from Plugins › De
 The package is not on npm yet; the template depends on it through git:
 
 ```json
-"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.1.0" }
+"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.2.0" }
 ```
 
 npm 12 refuses git dependencies by default; the template's `.npmrc` allows them for direct dependencies only
