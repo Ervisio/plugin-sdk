@@ -34,6 +34,10 @@ The package is not on npm yet; the template depends on it through git:
 "devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.1.0" }
 ```
 
+npm 12 refuses git dependencies by default; the template's `.npmrc` allows them for direct dependencies only
+(`allow-git=root`). Commit `package-lock.json` and check that the SDK's `resolved` URL is
+`git+https://github.com/...`, so `npm ci` works without SSH keys (npm sometimes records `git+ssh://`; replace it).
+
 ## Documentation
 
 * [docs/sdk.md](docs/sdk.md): the SDK object, building with the preset, styling, developing, migrating from v1/v2,

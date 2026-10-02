@@ -228,7 +228,7 @@ do not (use `sdk.asset()` and a `<style>` with the text if you must).
 ## Developing
 
 * Start from the template: `npx degit Ervisio/plugin-sdk/template my-plugin` (or copy the `template/` folder), then
-  `npm install` and `npm run build`. Change the id in `plugin/manifest.json`, `vite.config.ts` and `src/index.ts`.
+  `npm install` and `npm run build` (the template's `.npmrc` lets npm 12 fetch the SDK from git). Change the id in `plugin/manifest.json`, `vite.config.ts` and `src/index.ts`.
 * Turn on developer mode in Ervisio (`plugins.dev = true` in Settings, or a daemon started with `--dev`) and load
   `dist/<id>` from Plugins › Developer (`plugins.loadDev`). Dev folders may be unsigned while developer mode is on;
   they carry an "Unsigned, dev" badge. Everywhere else, `plugins.allow_unsigned = false` (the default) blocks unsigned
