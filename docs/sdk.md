@@ -118,7 +118,7 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 |---|---|
 | `version` | `3`. Check it if your plugin also supports older consoles: `if (sdk.version < 3) …` (v3 adds `api.http`, `api.httpStream`, `api.pty`, `files.mkdir`, `files.remove`). |
 | `plugin` | `{ id, name, version }`. |
-| `appOrigin` | The console's origin as the user reaches it (`https://host:9090`, or the proxy's). Use it for webhook URLs: `location.origin` is opaque inside the frame. Ervisio 0.5.1 and later. |
+| `appOrigin` | The console's origin as the user reaches it (`https://host:9090`, or the proxy's). Use it for webhook URLs: `location.origin` is opaque inside the frame. Ervisio 0.5.0 and later. |
 | `view` | `{ kind: 'page' \| 'widget', id }`: what this frame shows. |
 | `react` | React 18, shared by the runtime and the UI kit. |
 | `ui` | The app's own component kit (`Button`, `IconButton`, `Input`, `Select`, `Switch`, `Checkbox`, `Segmented`, `Table`, `Card`, `StatCard`, `Page`, `Panel`, `Dialog`, `ConfirmDialog`, `Sheet`, `Tabs`, `Badge`, `Chip`, `Progress`, `Skeleton`, `EmptyState`, `Menu`, `DropdownMenu`, `Tooltip`, `Icon`, `Sparkline`, `AreaChart`, `toast`, ...). `toast.ok/err/info(title, detail?)` shows the toast in the app, prefixed with your plugin's name. |
@@ -272,7 +272,7 @@ await sdk.api.upload('docker', { method: 'POST', path: '/v1.43/build', query: { 
   Pass `onDone` (the last argument: `api.download(name, req, filename, { onDone })`, `downloadCommand(command, args,
   filename, { env, onDone })`) to hear the end: `onDone({ ok, bytes, error? })` is called once with the number of bytes
   the daemon sent to the browser, or `ok: false` with a reason when the user cancelled, the service broke off, or the
-  browser never fetched the link (it expires after a minute). Ervisio 0.5.1 and later; older consoles ignore it.
+  browser never fetched the link (it expires after a minute). Ervisio 0.5.0 and later; older consoles ignore it.
 
 ```js
 await sdk.api.download('docker', { method: 'GET', path: `/v1.43/containers/${id}/export` }, 'container.tar', {
@@ -335,14 +335,14 @@ sdk.api.pty('shell', [id, '/bin/sh'], { cols: 80, rows: 24, env, onData, onExit,
   not apply. Access lists are decided by the administrator; `envs.list()` shows only environments the user may use and
   never any secret.
 * `envs.list()` also gives `address` for display: `host:port`, `user@host:port` for ssh, or the other server's host.
-  It is not a secret and is shown to everyone who may use the environment. Ervisio 0.5.1 and later.
+  It is not a secret and is shown to everyone who may use the environment. Ervisio 0.5.0 and later.
 * **Files on a paired server.** `files.read`, `readBytes`, `write`, `list`, `mkdir` and `remove` take `{ env }` for an
   environment of kind `ervisio`: the call runs on that server, as the user the pairing maps to, under *that server's*
   copy of your manifest (its folders, limits and admin rules), and shows in the activity log of both servers. Use
   absolute paths. An `admin` folder works only if the paired user is root or in the folder's `adminUnlessGroup`
   (otherwise `needs_admin`): a pairing never gets administrator rights. The other kinds (`tcp-tls`, `ssh`,
   `portainer-agent`) refuse `env` on files calls: use paths on this machine there. The plugin must also declare
-  `remote` on some HTTP API or command. Ervisio 0.5.1 and later.
+  `remote` on some HTTP API or command. Ervisio 0.5.0 and later.
 
 ```js
 await sdk.files.write('/opt/stacks/web/compose.yaml', yaml, { env });   // env of kind 'ervisio'
@@ -440,8 +440,8 @@ const r = await sdk.api.notify({ title: 'Backup finished', body: '12 volumes, 3.
 
 ### Requiring a newer Ervisio
 
-A plugin that needs members added after 0.5.0 says so in its manifest: `"minCore": "0.5.1"` or
-`"requires": { "ervisio": ">=0.5.1" }` (the same thing; only `>=` or a bare `X.Y.Z` is understood). A core that is older
+A plugin that needs members added after 0.5.0 says so in its manifest, for example `"minCore": "0.6.0"` or
+`"requires": { "ervisio": ">=0.6.0" }` (the same thing; only `>=` or a bare `X.Y.Z` is understood). A core that is older
 refuses to install the plugin, to enable it and to run it, and says which version it needs. Older cores that do not know
 the field refuse the manifest ("unknown field"), with the same result. Put the same field on your entry in the registry
 when you publish (see [publishing.md](publishing.md)) so Browse shows "Needs a newer Ervisio" instead of an Install button.

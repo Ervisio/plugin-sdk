@@ -93,7 +93,7 @@ export interface DownloadStarted {
   status?: number;
 }
 
-/** How a download ended, as the daemon saw the browser fetch it (Ervisio 0.5.1). */
+/** How a download ended, as the daemon saw the browser fetch it (Ervisio 0.5.0). */
 export interface DownloadResult {
   ok: boolean;
   /** Bytes sent to the browser. */
@@ -112,7 +112,7 @@ export interface DownloadOptions {
   onDone?(r: DownloadResult): void;
 }
 
-/** Options of the files calls (Ervisio 0.5.1). */
+/** Options of the files calls (Ervisio 0.5.0). */
 export interface FilesEnvOptions {
   /**
    * Id of an environment of kind `ervisio` (a paired server) from sdk.envs.list(): the call runs on that server, as the
@@ -179,7 +179,7 @@ export interface PluginEnv {
   kind: 'tcp-tls' | 'ssh' | 'portainer-agent' | 'ervisio';
   /**
    * For display, no secret: `host:port` (tcp-tls, portainer-agent), `user@host:port` (ssh), the other server's host
-   * (ervisio). Shown to everyone who may use the environment. Ervisio 0.5.1; undefined on older consoles.
+   * (ervisio). Shown to everyone who may use the environment. Ervisio 0.5.0; undefined on older consoles.
    */
   address?: string;
   status?: { reachable: boolean; engineVersion?: string; apiVersion?: string; latencyMs: number; error?: string; checked: string };
@@ -255,7 +255,7 @@ export interface JobsApi {
     runAs?: string;
     enabled?: boolean;
     /**
-     * Ignored since Ervisio 0.5.1: a plugin cannot approve a job that runs steps as root. The instance is created
+     * Ignored since Ervisio 0.5.0: a plugin cannot approve a job that runs steps as root. The instance is created
      * waiting for approval (`awaitingApproval`); an administrator approves it in Settings › Plugin jobs.
      * @deprecated
      */
@@ -301,7 +301,7 @@ export interface PluginSDK {
   version: number;
   /**
    * The console's origin as the user reaches it (`https://host:9090`, or the proxy's), no path. Use it to build URLs
-   * such as webhooks (`sdk.appOrigin + hook.path`): `location.origin` is opaque inside the sandboxed frame. Ervisio 0.5.1;
+   * such as webhooks (`sdk.appOrigin + hook.path`): `location.origin` is opaque inside the sandboxed frame. Ervisio 0.5.0;
    * on older consoles it is undefined.
    */
   appOrigin: string;
