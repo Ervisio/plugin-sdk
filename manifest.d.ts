@@ -97,6 +97,11 @@ export interface JobStep {
   if?: JobCondition;
   /** The failure is recorded as handled and does not fail the run. */
   continueOnError?: boolean;
+  /**
+   * Command steps only (Ervisio 0.5.1): replaces the command's own `timeoutSec` (default 30, max 600) for this step, up
+   * to 21600 (6 h), for work such as a volume backup. Cannot exceed the job's `timeoutSec`, so raise both.
+   */
+  timeoutSec?: number;
   /** A declared, non-pty command. `args` has one text per argument slot of the command. */
   command?: string;
   args?: string[];
@@ -112,7 +117,7 @@ export interface JobDef {
   description?: string;
   params?: JobParam[];
   steps: JobStep[];
-  /** For the whole run. Default 300, max 3600. */
+  /** For the whole run. Default 300, max 21600 (6 h). */
   timeoutSec?: number;
   /** The params a webhook call may set. */
   webhook?: { params: string[] };
@@ -160,6 +165,14 @@ export interface Manifest {
   color?: HueId;
   /** Relative path of the single ES module. */
   entry: string;
+  /**
+   * The oldest Ervisio the plugin needs, `"0.5.0"` (Ervisio 0.5.1). A core that is older refuses to install, enable or
+   * run it, with a message that says which version it needs. Same as `requires.ervisio`; the higher one counts.
+   * Older cores refuse a manifest with this field ("unknown field").
+   */
+  minCore?: string;
+  /** `{ ervisio: ">=0.5.0" }`: another spelling of `minCore`. Only `>=` or a bare version is understood. */
+  requires?: { ervisio?: string };
   /** sha256 of every file; written by the signer, never by hand. */
   files?: Record<string, string>;
   capabilities?: Capabilities;

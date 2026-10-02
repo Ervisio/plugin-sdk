@@ -118,6 +118,7 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 |---|---|
 | `version` | `3`. Check it if your plugin also supports older consoles: `if (sdk.version < 3) …` (v3 adds `api.http`, `api.httpStream`, `api.pty`, `files.mkdir`, `files.remove`). |
 | `plugin` | `{ id, name, version }`. |
+| `appOrigin` | The console's origin as the user reaches it (`https://host:9090`, or the proxy's). Use it for webhook URLs: `location.origin` is opaque inside the frame. Ervisio 0.5.1 and later. |
 | `view` | `{ kind: 'page' \| 'widget', id }`: what this frame shows. |
 | `react` | React 18, shared by the runtime and the UI kit. |
 | `ui` | The app's own component kit (`Button`, `IconButton`, `Input`, `Select`, `Switch`, `Checkbox`, `Segmented`, `Table`, `Card`, `StatCard`, `Page`, `Panel`, `Dialog`, `ConfirmDialog`, `Sheet`, `Tabs`, `Badge`, `Chip`, `Progress`, `Skeleton`, `EmptyState`, `Menu`, `DropdownMenu`, `Tooltip`, `Icon`, `Sparkline`, `AreaChart`, `toast`, ...). `toast.ok/err/info(title, detail?)` shows the toast in the app, prefixed with your plugin's name. |
@@ -125,7 +126,7 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 | `api.execStream(command, args, {onLine(stream, line), onExit(code), onError(err)})` | Same, streamed per line. Returns `{close()}`; closing kills the process. |
 | `api.http(name, {method, path, query?, headers?, body?})` | v3. An HTTP request to the `capabilities.http` entry `name` → `{status, headers, body, json(), bytes()}`. See "HTTP APIs, terminals and admin folders". |
 | `api.httpStream(name, {method, path, query?, headers?, body?}, {onStart?(status, headers), onData(chunk), onEnd(), onError(err)})` | v3. Same, with the body delivered as `Uint8Array` chunks as they arrive. Returns `{close()}`; closing ends the connection. |
-| `api.download(name, req, filename?)`, `api.downloadCommand(command, args, filename?)` | 0.2. The browser saves the response of a `GET`, or a command's output, as a file, streamed with no size limit. See "Large transfers". |
+| `api.download(name, req, filename?, { onDone? })`, `api.downloadCommand(command, args, filename?, { env?, onDone? })` | 0.2. The browser saves the response of a `GET`, or a command's output, as a file, streamed with no size limit. See "Large transfers". |
 | `api.upload(name, req, file, opts?)` | 0.2. Sends a `File` as the body of a `POST` or `PUT`, with progress and cancel. See "Large transfers". |
 | `saveFile(filename, data, mime?)`, `api.saveFile(...)` | 0.2. Saves data you hold (text, bytes, Blob, up to 64 MiB) as a browser download. |
 | `api.jobs`, `api.notify(...)` | 0.2. Background jobs and notifications; missing on consoles older than 0.5. See "Background jobs" and "Notifications". |
@@ -133,11 +134,11 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 | `envs.list()` | 0.2. The environments (remote Docker hosts) the user may use. See "Environments". |
 | `network.request(host)` | 0.2. Asks an administrator to approve one more host. See "Approved hosts". |
 | `api.pty(command, args, {cols, rows, onData(chunk), onExit(code), onError(err)})` | v3. Runs a command declared `pty: true` in a terminal → `{write(data), resize(cols, rows), close()}`. |
-| `files.read(path)` / `files.readBytes(path)` | Reads a file inside a folder listed in `capabilities.files.read` or `files.write` (4 MiB max), with the user's own rights. `read` returns text, `readBytes` a `Uint8Array`. |
-| `files.write(path, data)` | Writes (atomically replaces) a file inside a folder listed in `capabilities.files.write`. `data` is a string or `Uint8Array`, 4 MiB max. |
-| `files.list(path)` | Lists a folder inside the declared folders: `[{name, type: 'file'\|'dir'\|'link'\|'other', size, mtime}]`. |
-| `files.mkdir(path)` | v3. Creates a folder (and missing parents) inside a `files.write` folder. |
-| `files.remove(path)` | v3. Removes a file or an empty folder inside a `files.write` folder (never the declared folder itself). |
+| `files.read(path, { env? })` / `files.readBytes(path, { env? })` | Reads a file inside a folder listed in `capabilities.files.read` or `files.write` (4 MiB max), with the user's own rights. `read` returns text, `readBytes` a `Uint8Array`. |
+| `files.write(path, data, { env? })` | Writes (atomically replaces) a file inside a folder listed in `capabilities.files.write`. `data` is a string or `Uint8Array`, 4 MiB max. |
+| `files.list(path, { env? })` | Lists a folder inside the declared folders: `[{name, type: 'file'\|'dir'\|'link'\|'other', size, mtime}]`. |
+| `files.mkdir(path, { env? })` | v3. Creates a folder (and missing parents) inside a `files.write` folder. |
+| `files.remove(path, { env? })` | v3. Removes a file or an empty folder inside a `files.write` folder (never the declared folder itself). |
 | `asset(path)` | Fetches a file of your own plugin folder (relative path) and returns a `blob:` URL for `<img src>`, CSS, etc. |
 | `open(pageId)` | Opens one of your own pages in the app (for example from a widget). |
 | `openExternal(url)` | Opens an `http://` or `https://` address in a new browser tab (the frame cannot open pop-ups itself). Addresses with a user name or password are refused. Use it from a click handler, or the browser may block the tab. |
@@ -192,7 +193,9 @@ const logs = sdk.api.httpStream('docker', { method: 'GET', path: `/v1.43/contain
 * The result: `status` (a non-2xx status is a normal result, not an error; redirects are returned, never followed),
   `headers` (one string per name), `body` (text), `json()`, `bytes()`. Bodies are capped at `maxBody` (and a single
   `http` response at 11 MiB; use `httpStream` for more). A request body may be up to 8 MiB (the default
-  `maxBody`); send larger files with `api.upload`.
+  `maxBody`); send larger files with `api.upload`. The console carries an `http` request as one message of at most 12 MiB
+  and a signed-in user may have at most two bodies over 1 MiB in flight at once (more wait up to 30 s, then fail with
+  `unavailable`), so do not fire many large `http` or `httpStream` bodies in parallel: queue them, or use `upload`.
 * Errors: `not_found` (no such API), `invalid` (method, path, query, header or body not allowed), `needs_admin`
   (only if the unlock dialog was dismissed), `forbidden`, `unavailable` (nothing listening, timeout, response too large).
 * For an `admin` entry the app adds administrator rights when needed (not when the user is root or in
@@ -265,6 +268,17 @@ await sdk.api.upload('docker', { method: 'POST', path: '/v1.43/build', query: { 
 * A service that answers with a status other than 2xx makes `download` reject (`unavailable`, with `data.status`); for
   `upload` the status is a normal result, as for `api.http`.
 * Both accept `env` in the request (`downloadCommand` in a fourth argument `{ env }`), see "Environments".
+* **Knowing when it ended.** The browser fetches the file itself, so the promise only says that the download started.
+  Pass `onDone` (the last argument: `api.download(name, req, filename, { onDone })`, `downloadCommand(command, args,
+  filename, { env, onDone })`) to hear the end: `onDone({ ok, bytes, error? })` is called once with the number of bytes
+  the daemon sent to the browser, or `ok: false` with a reason when the user cancelled, the service broke off, or the
+  browser never fetched the link (it expires after a minute). Ervisio 0.5.1 and later; older consoles ignore it.
+
+```js
+await sdk.api.download('docker', { method: 'GET', path: `/v1.43/containers/${id}/export` }, 'container.tar', {
+  onDone: ({ ok, bytes, error }) => (ok ? toast.ok('Saved', `${bytes} bytes`) : toast.err('Download failed', error)),
+});
+```
 
 ### Saving a file you already hold
 
@@ -320,6 +334,21 @@ sdk.api.pty('shell', [id, '/bin/sh'], { cols: 80, rows: 24, env, onData, onExit,
 * Against an environment the call runs with the user's own rights through the user's tunnel: administrator rights do
   not apply. Access lists are decided by the administrator; `envs.list()` shows only environments the user may use and
   never any secret.
+* `envs.list()` also gives `address` for display: `host:port`, `user@host:port` for ssh, or the other server's host.
+  It is not a secret and is shown to everyone who may use the environment. Ervisio 0.5.1 and later.
+* **Files on a paired server.** `files.read`, `readBytes`, `write`, `list`, `mkdir` and `remove` take `{ env }` for an
+  environment of kind `ervisio`: the call runs on that server, as the user the pairing maps to, under *that server's*
+  copy of your manifest (its folders, limits and admin rules), and shows in the activity log of both servers. Use
+  absolute paths. An `admin` folder works only if the paired user is root or in the folder's `adminUnlessGroup`
+  (otherwise `needs_admin`): a pairing never gets administrator rights. The other kinds (`tcp-tls`, `ssh`,
+  `portainer-agent`) refuse `env` on files calls: use paths on this machine there. The plugin must also declare
+  `remote` on some HTTP API or command. Ervisio 0.5.1 and later.
+
+```js
+await sdk.files.write('/opt/stacks/web/compose.yaml', yaml, { env });   // env of kind 'ervisio'
+```
+* Streams (`httpStream`, `execStream`) through a `portainer-agent` environment arrive in 4 KiB steps: the agent buffers
+  them itself. Use SSH or TLS for live logs.
 * Background jobs cannot target an environment yet.
 
 ### Approved hosts
@@ -377,16 +406,21 @@ await sdk.api.jobs.delete(job.id);
 
 // Webhooks: POST <origin>/hooks/<plugin>/<token>, no sign-in; the token is shown only once.
 const hook = await sdk.api.jobs.webhooks.create(job.id, 'CI');
-const url = location.origin + hook.path;                                 // location.origin of the app, not of the frame
+const url = sdk.appOrigin + hook.path;                                   // the app's origin; location.origin is opaque in a frame
 await sdk.api.jobs.webhooks.regenerate(job.id, hook.id);
 await sdk.api.jobs.webhooks.revoke(job.id, hook.id);
 ```
 
 * A step can run only after an earlier one succeeded, failed, changed or differs from another (`if`); `continueOnError`
   lets a later step react to a failure. Text takes `{param.x}`, `{step.id.stdout}`, `{job}`, `{instance}`, `{plugin}`.
-* A job that needs administrator rights needs an administrator's explicit `confirmAdmin: true` when the instance is
-  created or changed; the approval is recorded, and the instance is switched off when that user loses admin rights or a
-  plugin update changes what the job does.
+* A job with steps that run as root (`admin` commands or APIs) is created **waiting for approval**: the instance has
+  `awaitingApproval: true` and `adminSteps` (the steps that run as root) and does not run. An administrator approves it
+  in Settings › Plugin jobs; a plugin cannot (`confirmAdmin` is ignored). A plugin update that changes the job, a
+  command or API it uses, or new param values (`jobs.update` with other `params`) need a new approval, and a webhook
+  call may not set params on such an instance. The instance is switched off when its owner loses admin rights.
+  Show `awaitingApproval` in your UI so the user knows to ask an administrator.
+* `timeoutSec` on a command step (up to 6 hours, never more than the job's own `timeoutSec`, which is also up to 6
+  hours) replaces the command's own 600-second limit for that step: use it for long work such as a volume backup.
 * One run at a time per instance, a timeout, the last 20 runs kept. Settings › Plugin jobs lists every instance for
   administrators. Failures send an alert to the channels that subscribe to jobs.
 * Runs, step commands and HTTP calls, accepted webhooks and approvals go to the activity log with `origin` `job <name>`
@@ -395,12 +429,23 @@ await sdk.api.jobs.webhooks.revoke(job.id, hook.id);
 ### Notifications
 
 With `"notify": true` in `capabilities`, a plugin sends a message to the channels an administrator configured in
-Settings › Notification channels (email, Telegram, a webhook, ntfy, Gotify). It is rate limited per plugin.
+Settings › Notification channels (email, Telegram, a webhook, ntfy, Gotify). It is rate limited per plugin and sender (10 a minute, 60 an hour for each user, and separately for each job instance).
+The message's source is set by Ervisio, not by the plugin: `Docker (alice)` for a page, `Docker job <name> (<owner>)` for
+a job step, so a message cannot pretend to come from someone else.
 
 ```js
 const r = await sdk.api.notify({ title: 'Backup finished', body: '12 volumes, 3.4 GiB', level: 'success', link: '/p/docker/volumes' });
 // r = { channels: 2, delivered: 2, failed: 0 }; level is info (default), success, warn or error
 ```
+
+### Requiring a newer Ervisio
+
+A plugin that needs members added after 0.5.0 says so in its manifest: `"minCore": "0.5.1"` or
+`"requires": { "ervisio": ">=0.5.1" }` (the same thing; only `>=` or a bare `X.Y.Z` is understood). A core that is older
+refuses to install the plugin, to enable it and to run it, and says which version it needs. Older cores that do not know
+the field refuse the manifest ("unknown field"), with the same result. Put the same field on your entry in the registry
+when you publish (see [publishing.md](publishing.md)) so Browse shows "Needs a newer Ervisio" instead of an Install button.
+To use a new member on a console that may be older, guard on it instead (`if (sdk.appOrigin)`, `if (sdk.api.jobs)`).
 
 ## Styling
 

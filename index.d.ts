@@ -93,6 +93,35 @@ export interface DownloadStarted {
   status?: number;
 }
 
+/** How a download ended, as the daemon saw the browser fetch it (Ervisio 0.5.1). */
+export interface DownloadResult {
+  ok: boolean;
+  /** Bytes sent to the browser. */
+  bytes: number;
+  /** Why it did not finish: cancelled, cut short, never fetched. Absent when ok. */
+  error?: string;
+}
+
+/** Options of api.download and api.downloadCommand. */
+export interface DownloadOptions {
+  /**
+   * Called once when the transfer ends. The browser fetches the file by itself, so this is the only way to know the
+   * end: the daemon records the result and the app relays it. Not called when the request itself is refused (the
+   * promise rejects instead), nor for a frame that closed first.
+   */
+  onDone?(r: DownloadResult): void;
+}
+
+/** Options of the files calls (Ervisio 0.5.1). */
+export interface FilesEnvOptions {
+  /**
+   * Id of an environment of kind `ervisio` (a paired server) from sdk.envs.list(): the call runs on that server, as the
+   * paired user, under that server's copy of the plugin's manifest. Other kinds of environment refuse it (files are
+   * local there). Paths must be absolute (`~` is not expanded on the other server).
+   */
+  env?: string;
+}
+
 /** Options of api.upload. With onResponseStart or onResponseData the response is streamed and the result's body is empty. */
 export interface UploadOptions {
   onProgress?(p: { loaded: number; total: number }): void;
@@ -148,6 +177,11 @@ export interface PluginEnv {
   id: string;
   name: string;
   kind: 'tcp-tls' | 'ssh' | 'portainer-agent' | 'ervisio';
+  /**
+   * For display, no secret: `host:port` (tcp-tls, portainer-agent), `user@host:port` (ssh), the other server's host
+   * (ervisio). Shown to everyone who may use the environment. Ervisio 0.5.1; undefined on older consoles.
+   */
+  address?: string;
   status?: { reachable: boolean; engineVersion?: string; apiVersion?: string; latencyMs: number; error?: string; checked: string };
 }
 
@@ -165,6 +199,14 @@ export interface JobInstance {
   enabled: boolean;
   disabledReason?: string;
   needsAdmin: boolean;
+  /**
+   * The job runs steps as root and an administrator has not approved this instance (or the approval no longer covers
+   * its job, commands, HTTP APIs or param values). It stays switched on but does not run: scheduled starts are
+   * skipped, runNow fails with `conflict` and a webhook call answers 404.
+   */
+  awaitingApproval?: boolean;
+  /** The steps that run as root, shown to the administrator who approves. */
+  adminSteps?: { id: string; kind: 'command' | 'http'; command?: string; argv?: string[]; http?: { api: string; method: string; path: string } }[];
   approval?: { by: string; at: number; valid: boolean };
   webhooks: { id: string; label?: string; created: number; lastUsed?: number }[];
   running: boolean;
@@ -200,7 +242,7 @@ export interface WebhookCreated {
   label?: string;
   /** Shown once. */
   token: string;
-  /** Build the URL as location.origin + path. */
+  /** Build the URL as sdk.appOrigin + path (location.origin is opaque inside the sandboxed frame). */
   path: string;
 }
 
@@ -212,14 +254,18 @@ export interface JobsApi {
     schedule?: JobSchedule;
     runAs?: string;
     enabled?: boolean;
-    /** Needed when the job runs steps with administrator rights and the caller is an administrator. */
+    /**
+     * Ignored since Ervisio 0.5.1: a plugin cannot approve a job that runs steps as root. The instance is created
+     * waiting for approval (`awaitingApproval`); an administrator approves it in Settings › Plugin jobs.
+     * @deprecated
+     */
     confirmAdmin?: boolean;
   }): Promise<JobInstance>;
   list(o?: { job?: string }): Promise<JobInstance[]>;
   get(id: string): Promise<JobInstance>;
   update(
     id: string,
-    patch: { name?: string; params?: Record<string, string>; schedule?: JobSchedule | null; enabled?: boolean; confirmAdmin?: boolean },
+    patch: { name?: string; params?: Record<string, string>; schedule?: JobSchedule | null; enabled?: boolean; /** @deprecated Ignored: see create(). */ confirmAdmin?: boolean },
   ): Promise<JobInstance>;
   delete(id: string): Promise<void>;
   runNow(id: string): Promise<{ run: string }>;
@@ -253,6 +299,12 @@ export type View<P = { sdk: PluginSDK }> =
 export interface PluginSDK {
   /** 3 for this contract. Check it when you also support older consoles. */
   version: number;
+  /**
+   * The console's origin as the user reaches it (`https://host:9090`, or the proxy's), no path. Use it to build URLs
+   * such as webhooks (`sdk.appOrigin + hook.path`): `location.origin` is opaque inside the sandboxed frame. Ervisio 0.5.1;
+   * on older consoles it is undefined.
+   */
+  appOrigin: string;
   plugin: { id: string; name: string; version: string };
   /** What this frame shows. */
   view: { kind: 'page' | 'widget'; id: string };
@@ -266,9 +318,9 @@ export interface PluginSDK {
     http(name: string, req: HttpRequest): Promise<HttpResponse>;
     httpStream(name: string, req: HttpRequest, h: HttpStreamHandlers): Closable;
     /** SDK 0.2: the browser saves the response of a GET to an HTTP API as a file, streamed to the disk with no size limit. Resolves when the download starts. */
-    download(name: string, req: HttpRequest, filename?: string): Promise<DownloadStarted>;
+    download(name: string, req: HttpRequest, filename?: string, o?: DownloadOptions): Promise<DownloadStarted>;
     /** SDK 0.2: same for the standard output of a declared (non-pty) command. */
-    downloadCommand(command: string, args: string[], filename?: string, o?: EnvOptions): Promise<DownloadStarted>;
+    downloadCommand(command: string, args: string[], filename?: string, o?: EnvOptions & DownloadOptions): Promise<DownloadStarted>;
     /** SDK 0.2: sends a File or Blob as the body of a POST or PUT, streamed with progress, up to the API's `maxUpload` (default 20 GiB). `req.body` is not used. */
     upload(name: string, req: Omit<HttpRequest, 'body'>, file: Blob, opts?: UploadOptions | ((p: { loaded: number; total: number }) => void)): UploadHandle;
     /** SDK 0.2: saves data the plugin holds (a string, bytes or a Blob, at most 64 MiB) as a browser download. */
@@ -277,6 +329,11 @@ export interface PluginSDK {
     /** SDK 0.2: background jobs (capabilities.jobs). Missing on consoles older than Ervisio 0.5. */
     jobs?: JobsApi;
     /** SDK 0.2: sends a notification to the channels an administrator configured (needs capabilities.notify). Missing on consoles older than Ervisio 0.5. */
+    /**
+     * SDK 0.2: sends a notification to the channels an administrator configured (needs capabilities.notify). The message's
+     * source is named by the daemon, not by the plugin: "<Plugin> (<user>)", or "<Plugin> job <name> (<owner>)" for a job
+     * step. The rate limit (10 a minute, 60 an hour) is per plugin and sender. Missing on consoles older than Ervisio 0.5.
+     */
     notify?(n: { title: string; body?: string; level?: 'info' | 'success' | 'warn' | 'error'; link?: string }): Promise<{ channels: number; delivered: number; failed: number }>;
   };
   /** Same as `api.saveFile`. */
@@ -293,12 +350,12 @@ export interface PluginSDK {
     request(host: string, o?: { scheme?: 'https' | 'http' }): Promise<{ host: string; approved: true; reloading: boolean }>;
   };
   files: {
-    read(path: string): Promise<string>;
-    readBytes(path: string): Promise<Uint8Array>;
-    write(path: string, data: string | Uint8Array): Promise<void>;
-    list(path: string): Promise<FileEntry[]>;
-    mkdir(path: string): Promise<void>;
-    remove(path: string): Promise<void>;
+    read(path: string, o?: FilesEnvOptions): Promise<string>;
+    readBytes(path: string, o?: FilesEnvOptions): Promise<Uint8Array>;
+    write(path: string, data: string | Uint8Array, o?: FilesEnvOptions): Promise<void>;
+    list(path: string, o?: FilesEnvOptions): Promise<FileEntry[]>;
+    mkdir(path: string, o?: FilesEnvOptions): Promise<void>;
+    remove(path: string, o?: FilesEnvOptions): Promise<void>;
   };
   /** Fetches a file of the plugin folder and returns a blob: URL. */
   asset(path: string): Promise<string>;

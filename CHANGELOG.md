@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased (0.2.x, for Ervisio 0.5.1)
+
+Follow-ups to 0.5.0; every new member is optional.
+
+- Files over a pairing: `files.read`, `readBytes`, `write`, `list`, `mkdir` and `remove` take `{ env }` for an
+  environment of kind `ervisio` (a paired server); `FilesEnvOptions`.
+- `envs.list()` entries carry a display `address`.
+- `api.download` and `api.downloadCommand` take `{ onDone }` and call it once with `{ ok, bytes, error? }` when the
+  transfer ends (`DownloadOptions`, `DownloadResult`).
+- `sdk.appOrigin`: the console's origin, for webhook URLs (`location.origin` is opaque in a frame). The docs no longer
+  say to use `location.origin`.
+- Jobs: `awaitingApproval` and `adminSteps` on instances; `confirmAdmin` is ignored (deprecated): an administrator
+  approves root jobs in Settings. `timeoutSec` on command steps (up to 6 h) and a job `timeoutSec` up to 6 h.
+- Manifest: `minCore` / `requires: { ervisio }`.
+- Docs: notification sender naming (`Plugin (user)`, `Plugin job <name> (<owner>)`) and rate limit per sender; the limit
+  of two large bodies in flight per user; Portainer-agent streams arrive in 4 KiB steps.
+
 ## 0.2.0
 
 Needs Ervisio 0.5 for the new members; plugins written for 0.1 run unchanged and the contract version stays 3. The new
