@@ -1,0 +1,18 @@
+{
+  "name": "ervisio-plugin-hello",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build && ervisio-plugin-pack copy",
+    "dev": "ervisio-plugin-pack copy && vite build --watch",
+    "pack": "ervisio-plugin-pack pack",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.1.0",
+    "@types/react": "^18.3.31",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.2"
+  }
+}

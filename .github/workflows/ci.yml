@@ -1,0 +1,39 @@
+# Builds the template against this checkout of the SDK (packed as npm would
+# publish it), so a broken export, preset or pack script fails here.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  template:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Pack the SDK
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          ls -l "$RUNNER_TEMP"/ervisio-plugin-sdk-*.tgz
+      - name: Build the template with the packed SDK
+        run: |
+          cp -r template "$RUNNER_TEMP/tpl"
+          cd "$RUNNER_TEMP/tpl"
+          npm pkg set "devDependencies.@ervisio/plugin-sdk=file:$(ls "$RUNNER_TEMP"/ervisio-plugin-sdk-*.tgz)"
+          npm install --no-audit --no-fund
+          npm run build
+          npm run pack
+          test -s dist/hello/index.js
+          test -s dist/hello/manifest.json
+          # One self-contained module: no import statements left.
+          if grep -Eq '(^|[;}])import[ {*]' dist/hello/index.js; then echo "the bundle still imports modules"; exit 1; fi
+          (cd dist && sha256sum -c hello-0.1.0.tar.gz.sha256)
+          tar -tzf dist/hello-0.1.0.tar.gz | sort
+          test "$(tar -tzf dist/hello-0.1.0.tar.gz | cut -d/ -f1 | sort -u)" = hello

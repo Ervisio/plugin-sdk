@@ -1,0 +1,49 @@
+# Ervisio plugin SDK
+
+Types, a React shim, a Vite preset and a project template for building [Ervisio](https://github.com/Ervisio/ervisio)
+plugins (plugin SDK contract version 3).
+
+An Ervisio plugin is a folder with a `manifest.json` and one self-contained ES module. Its code runs in a sandboxed
+frame and reaches the machine only through what the manifest declares: commands, HTTP APIs on unix sockets, folders.
+
+## Contents
+
+| Import | What |
+|---|---|
+| `@ervisio/plugin-sdk` | TypeScript types of the SDK object (`PluginSDK`, `ExecResult`, `HttpResponse`, ...) and of the manifest (`Manifest`, `Capabilities`, ...); `setSdk()` / `getSdk()` |
+| `@ervisio/plugin-sdk/react` | The React shim: `react` inside your bundle, forwarding to `sdk.react`; `setReact()` |
+| `@ervisio/plugin-sdk/jsx-runtime` | The automatic JSX runtime on top of the shim |
+| `@ervisio/plugin-sdk/vite` | `ervisioPlugin()`: Vite config for a single-file ES module without React |
+| `ervisio-plugin-pack` (bin) | Copies `plugin/*` next to the bundle, writes the release tarball and its sha256 |
+| `template/` | A minimal working plugin with CI and release workflows |
+
+## Getting started
+
+```sh
+npx degit Ervisio/plugin-sdk/template my-plugin   # or copy the template/ folder
+cd my-plugin
+npm install
+npm run build        # dist/hello/index.js + manifest.json
+```
+
+Then turn on developer mode in Ervisio and load `dist/hello` from Plugins › Developer.
+
+The package is not on npm yet; the template depends on it through git:
+
+```json
+"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.1.0" }
+```
+
+## Documentation
+
+* [docs/sdk.md](docs/sdk.md): the SDK object, building with the preset, styling, developing, migrating from v1/v2,
+  security notes.
+* [docs/publishing.md](docs/publishing.md): releasing a plugin and getting it into the Ervisio marketplace.
+* Manifest reference: [docs/api/plugins.md](https://github.com/Ervisio/ervisio/blob/main/docs/api/plugins.md) in the
+  Ervisio repository.
+
+A complete plugin built with this SDK: [Ervisio/plugin-docker](https://github.com/Ervisio/plugin-docker).
+
+## License
+
+MIT, see [LICENSE](LICENSE).

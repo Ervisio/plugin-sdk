@@ -1,0 +1,82 @@
+{
+  "name": "@ervisio/plugin-sdk",
+  "version": "0.1.0",
+  "description": "Types, React shim and Vite preset for Ervisio plugins (plugin SDK contract version 3).",
+  "type": "module",
+  "license": "MIT",
+  "author": "Fonlogen",
+  "homepage": "https://github.com/Ervisio/plugin-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ervisio/plugin-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ervisio/plugin-sdk/issues"
+  },
+  "keywords": [
+    "ervisio",
+    "plugin",
+    "sdk",
+    "vite",
+    "linux",
+    "server-management"
+  ],
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./react": {
+      "types": "./react.d.ts",
+      "default": "./react.js"
+    },
+    "./jsx-runtime": {
+      "types": "./jsx-runtime.d.ts",
+      "default": "./jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./jsx-runtime.d.ts",
+      "default": "./jsx-runtime.js"
+    },
+    "./vite": {
+      "types": "./vite.d.ts",
+      "default": "./vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "manifest.d.ts",
+    "react.js",
+    "react.d.ts",
+    "jsx-runtime.js",
+    "jsx-runtime.d.ts",
+    "vite.js",
+    "vite.d.ts",
+    "scripts/pack.mjs",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "ervisio-plugin-pack": "scripts/pack.mjs"
+  },
+  "peerDependencies": {
+    "@types/react": "^18.3.0",
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

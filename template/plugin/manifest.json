@@ -1,0 +1,28 @@
+{
+  "author": "Your name",
+  "capabilities": {
+    "commands": [
+      {
+        "argv": ["uptime"],
+        "description": "Show how long the system has been running",
+        "name": "uptime"
+      }
+    ]
+  },
+  "color": "plg",
+  "contributes": {
+    "pages": [
+      {
+        "icon": "plugins",
+        "id": "hello",
+        "title": "Hello"
+      }
+    ]
+  },
+  "description": "A minimal example plugin.",
+  "entry": "index.js",
+  "icon": "plugins",
+  "id": "hello",
+  "name": "Hello",
+  "version": "0.1.0"
+}
