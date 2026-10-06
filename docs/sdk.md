@@ -119,6 +119,7 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 | `version` | `3`. Check it if your plugin also supports older consoles: `if (sdk.version < 3) …` (v3 adds `api.http`, `api.httpStream`, `api.pty`, `files.mkdir`, `files.remove`). |
 | `plugin` | `{ id, name, version }`. |
 | `appOrigin` | The console's origin as the user reaches it (`https://host:9090`, or the proxy's). Use it for webhook URLs: `location.origin` is opaque inside the frame. Ervisio 0.5.0 and later. |
+| `platform` | `'linux'` or `'windows'`: the server's system. Ervisio 0.6.1 and later; undefined (Linux) on older consoles. See "Windows" below. |
 | `view` | `{ kind: 'page' \| 'widget', id }`: what this frame shows. |
 | `react` | React 18, shared by the runtime and the UI kit. |
 | `ui` | The app's own component kit (`Button`, `IconButton`, `Input`, `Select`, `Switch`, `Checkbox`, `Segmented`, `Table`, `Card`, `StatCard`, `Page`, `Panel`, `Dialog`, `ConfirmDialog`, `Sheet`, `Tabs`, `Badge`, `Chip`, `Progress`, `Skeleton`, `EmptyState`, `Menu`, `DropdownMenu`, `Tooltip`, `Icon`, `Sparkline`, `AreaChart`, `toast`, ...). `toast.ok/err/info(title, detail?)` shows the toast in the app, prefixed with your plugin's name. |
@@ -446,6 +447,51 @@ refuses to install the plugin, to enable it and to run it, and says which versio
 the field refuse the manifest ("unknown field"), with the same result. Put the same field on your entry in the registry
 when you publish (see [publishing.md](publishing.md)) so Browse shows "Needs a newer Ervisio" instead of an Install button.
 To use a new member on a console that may be older, guard on it instead (`if (sdk.appOrigin)`, `if (sdk.api.jobs)`).
+
+## Windows (SDK 0.3)
+
+Ervisio 0.6 runs on Windows too. A plugin says where it works with `platforms` in the manifest:
+`["linux"]`, `["windows"]` or `["linux", "windows"]`. Without it the plugin is Linux only (every plugin written
+before 0.6 was). Plugins and Browse show a Linux and/or Windows mark next to Install, and a plugin for the other
+system cannot be installed. `platforms` needs Ervisio 0.6.1: add `"minCore": "0.6.1"` (0.6.2 if you use the
+per-entry form below), or older consoles refuse the manifest.
+
+The page code, the UI kit and the SDK calls are the same on both systems. What differs is what the manifest
+declares, so commands, HTTP APIs and folders take `platforms` too (Ervisio 0.6.2). Two entries may share a name
+when their systems do not overlap; the daemon keeps the one for its system, so the page calls the same name:
+
+```json
+{
+  "platforms": ["linux", "windows"],
+  "minCore": "0.6.2",
+  "capabilities": {
+    "commands": [
+      {"name": "services", "argv": ["systemctl", "list-units", "--type=service", "--output=json"], "platforms": ["linux"]},
+      {"name": "services", "argv": ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "Get-Service | Select-Object Name,Status | ConvertTo-Json"], "platforms": ["windows"]}
+    ],
+    "http": [
+      {"name": "docker", "socket": "/run/docker.sock", "platforms": ["linux"], "rules": [{"methods": ["GET"], "path": "/.*"}]},
+      {"name": "docker", "socket": "\\\\.\\pipe\\docker_engine", "platforms": ["windows"], "rules": [{"methods": ["GET"], "path": "/.*"}]}
+    ],
+    "files": {"read": [{"path": "/var/log/demo", "platforms": ["linux"]}, {"path": "C:\\ProgramData\\Demo", "platforms": ["windows"]}]}
+  }
+}
+```
+
+```ts
+const r = await sdk.api.exec('services');                 // systemctl on Linux, PowerShell on Windows
+const parse = sdk.platform === 'windows' ? parseGetService : parseSystemctl;
+```
+
+* Commands run without a shell on both systems. On Windows `argv[0]` is a program on the `PATH` (`powershell.exe`,
+  `sc.exe`, `netsh.exe`, `winget.exe`) or an absolute path. Keep PowerShell scripts fixed in the manifest and pass
+  values as `{N}` arguments (read them from `$args`), never build a script from user input.
+* HTTP APIs: a unix socket, or on Windows a named pipe (`\\.\pipe\name`, only in an entry for `["windows"]`). Docker
+  Desktop and Docker Engine on Windows listen on `\\.\pipe\docker_engine`.
+* Folders: `C:\dir` paths on Windows, `/dir` on Linux, `~/...` on both (the user's home or profile).
+* `admin` asks members of Administrators to unlock administrator rights; `adminUnlessGroup` takes a Windows group
+  name (`docker-users`).
+* `pty: true` commands run in a ConPTY on Windows.
 
 ## Styling
 
