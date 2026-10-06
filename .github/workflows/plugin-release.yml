@@ -3,7 +3,8 @@
 # fixing the release process means changing this one file.
 #
 # Run by hand (Actions > Release > Run workflow, choose patch/minor/major):
-#   1. bumps the version in plugin/manifest.json and package.json(-lock),
+#   1. bumps the version in plugin/manifest.json and package.json(-lock), and
+#      runs the package's "version" script if it has one (other files),
 #   2. adds a "## X.Y.Z" section to CHANGELOG.md (the notes you typed, or the
 #      commit subjects since the last release),
 #   3. commits "Release X.Y.Z", tags vX.Y.Z and pushes both,
@@ -71,6 +72,9 @@ jobs:
             if (out === s) { console.error("no version in manifest.json"); process.exit(1); }
             JSON.parse(out); fs.writeFileSync(p, out);
           ' "$new"
+          # npm version also runs the package's "version" script, if any: a plugin
+          # that writes its version in more files (an engine, a helper) updates
+          # them there, reading $npm_package_version.
           npm version "$new" --no-git-tag-version --allow-same-version >/dev/null
           # Notes: what was typed, or the commit subjects since the last tag.
           body="$RUNNER_TEMP/section.md"
@@ -106,6 +110,8 @@ jobs:
         run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Build
         run: npm run build
+      - name: Plugin's own release checks (npm run check, when it has one)
+        run: npm run --if-present check
       - name: Pack (checks tag = manifest version = package.json version)
         run: npm run pack
 
