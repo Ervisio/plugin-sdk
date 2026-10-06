@@ -9,6 +9,11 @@ Windows support (Ervisio 0.6). Plugins written for 0.2 run unchanged on Linux; t
   under one name; Windows named pipes as `socket`.
 - `sdk.platform`: the server's system.
 - docs/sdk.md: "Windows" section.
+- One-button releases: the reusable workflow `.github/workflows/plugin-release.yml` bumps the version, writes the
+  changelog, tags, releases and tells the registry. The template's `release.yml` calls it (Actions › Release › Run
+  workflow). Existing plugins: replace `.github/workflows/release.yml` with the template's.
+- `create-ervisio-plugin <id>`: a new plugin project from the template in one command (`--platforms`, `--github`).
+- The template's CI validates against Ervisio `main`, so `platforms` and other new manifest fields are accepted.
 
 ## 0.2.0
 

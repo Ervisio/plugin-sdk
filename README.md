@@ -19,14 +19,20 @@ frame and reaches the machine only through what the manifest declares: commands,
 
 ## Getting started
 
+One command makes a new plugin project (template, id, names, platforms, git, the Release button):
+
 ```sh
-npx degit Ervisio/plugin-sdk/template my-plugin   # or copy the template/ folder
-cd my-plugin
+npm exec --yes --package=github:Ervisio/plugin-sdk -- create-ervisio-plugin my-tool --name "My tool" --platforms linux,windows
+cd plugin-my-tool
 npm install
-npm run build        # dist/hello/index.js + manifest.json
+npm run build        # dist/my-tool/index.js + manifest.json
 ```
 
-Then turn on developer mode in Ervisio and load `dist/hello` from Plugins › Developer.
+Add `--github Ervisio` to also create and push the GitHub repository (needs the `gh` CLI). Then turn on developer mode
+in Ervisio and load `dist/my-tool` from Plugins › Developer.
+
+Releasing is one button: **Actions › Release › Run workflow** (patch / minor / major). See
+[docs/publishing.md](docs/publishing.md).
 
 The package is not on npm yet; the template depends on it through git:
 

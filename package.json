@@ -59,10 +59,13 @@
     "scripts/pack.mjs",
     "docs",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "scripts/create.mjs",
+    "template"
   ],
   "bin": {
-    "ervisio-plugin-pack": "scripts/pack.mjs"
+    "ervisio-plugin-pack": "scripts/pack.mjs",
+    "create-ervisio-plugin": "scripts/create.mjs"
   },
   "peerDependencies": {
     "@types/react": "^18.3.0",

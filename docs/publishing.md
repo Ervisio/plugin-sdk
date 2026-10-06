@@ -24,11 +24,21 @@ release tarball. Both use `ervisio-plugin-pack`, installed with this package.
 
 ## Releasing
 
-1. Set the new version in `plugin/manifest.json` and `package.json`, and add a `## X.Y.Z` section to `CHANGELOG.md`.
-   Say plainly what changed, and say it when the release asks for new permissions (capabilities) and why.
-2. Commit, then tag and push: `git tag -a vX.Y.Z -m "X.Y.Z" && git push origin vX.Y.Z`.
-3. The release workflow checks that the tag equals the manifest and package versions, builds, validates the manifest
-   with Ervisio's own validator, and creates the GitHub release.
+On GitHub: **Actions › Release › Run workflow**, choose `patch`, `minor` or `major`, optionally type the release notes,
+and run it. That is all. The workflow (the reusable one in this repository, `.github/workflows/plugin-release.yml`):
+
+1. bumps the version in `plugin/manifest.json` and `package.json`,
+2. adds a `## X.Y.Z` section to `CHANGELOG.md`: the notes you typed, or the commit subjects since the last release
+   (write commit subjects as you want them read: "Add the Logs tab", "Fix the stop button"),
+3. commits `Release X.Y.Z`, tags `vX.Y.Z` and pushes both,
+4. builds, validates the manifest with Ervisio's own validator and creates the GitHub release,
+5. tells the registry, which publishes it (see below).
+
+When a release asks for new permissions, say so in the notes and why. Pushing a `vX.Y.Z` tag yourself still works:
+the workflow then does steps 4 and 5.
+
+If `main` is protected so that GitHub Actions cannot push to it, allow `github-actions[bot]` to bypass the rule, or
+release by pushing the tag yourself.
 
 ### Release assets (the contract with the registry)
 
@@ -48,13 +58,18 @@ Open a pull request on [Ervisio/plugins](https://github.com/Ervisio/plugins) tha
 `registry.json`, following its [CONTRIBUTING.md](https://github.com/Ervisio/plugins/blob/main/CONTRIBUTING.md). After
 that:
 
-* The registry checks the latest release of every listed repository every few hours. A new version becomes a pull
-  request in the registry that shows the manifest, the release notes and the permission changes against the previous
-  version ("new permissions: ..."). A maintainer can also run the registry's "Sync" workflow by hand for a faster
-  pickup.
-* Only registry maintainers merge. On merge, the registry signs the plugin with the Ervisio team key (`manifest.sig`
-  over the manifest, which lists the sha256 of every file), attaches the signed tarball to a release of the registry,
-  and publishes the new signed catalog.
+* The release workflow tells the registry right away when the organization secret `REGISTRY_TOKEN` exists (a
+  fine-grained token allowed to run workflows on Ervisio/plugins: "Contents: read and write" there). Without it the
+  registry checks every listed repository every six hours.
+* **Plugins of the Ervisio team** (`"trust": "team"` in `registry.json`): a new version that asks for **no new
+  permissions** is signed and published at once, with no pull request; it is in the marketplace a few minutes after
+  you press Release. A version with new or wider permissions, and the first version of a plugin, become a pull
+  request that shows the manifest, the notes and the permission changes; a maintainer merges it, then it is
+  published.
+* **Community plugins**: every new version is a pull request, reviewed by a maintainer.
+* On publish the registry signs the plugin with the Ervisio team key (`manifest.sig` over the manifest, which lists the
+  sha256 of every file), attaches the signed tarball to a release of the registry, and publishes the new signed
+  catalog.
 * Every plugin in the catalog is signed and shows as verified. Ervisio installs only signed plugins by default, and
   the consent dialog shows the user exactly the permissions your manifest asks for.
 
