@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+Windows support (Ervisio 0.6). Plugins written for 0.2 run unchanged on Linux; the contract version stays 3.
+
+- `Manifest.platforms` (`'linux' | 'windows'`, type `Platform`): where the plugin works (Ervisio 0.6.1). Missing = Linux only.
+- `platforms` on `Command`, `HttpApi` and object `Folder` entries (Ervisio 0.6.2): per-system forms of one command or API
+  under one name; Windows named pipes as `socket`.
+- `sdk.platform`: the server's system.
+- docs/sdk.md: "Windows" section.
+
 ## 0.2.0
 
 Needs Ervisio 0.5 for the new members; plugins written for 0.1 run unchanged and the contract version stays 3. The new

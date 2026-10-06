@@ -35,6 +35,8 @@ export interface Command {
    * `docker` and argv must hold exactly one `{env}` item, which the daemon replaces with the environment's address.
    */
   remote?: 'docker';
+  /** SDK 0.3: systems this entry is for (Ervisio 0.6.2). Missing = all the plugin's `platforms`. Two entries may share a name when their systems do not overlap; the daemon uses the one for its system. */
+  platforms?: Platform[];
 }
 
 /** One rule of an HTTP API: methods allowed on paths matching the regular expression. */
@@ -61,10 +63,19 @@ export interface HttpApi {
   remote?: 'docker';
   /** Default 30, max 600. */
   timeoutSec?: number;
+  /**
+   * SDK 0.3: systems this entry is for (Ervisio 0.6.2). In an entry for `["windows"]` alone, `socket` may be a named
+   * pipe, `\\.\pipe\docker_engine`.
+   */
+  platforms?: Platform[];
 }
 
 /** A capabilities.files entry: a path, or an object with options (SDK v3). */
-export type Folder = string | { path: string; admin?: boolean; adminUnlessGroup?: string; create?: boolean };
+/** A system Ervisio runs on. */
+export type Platform = 'linux' | 'windows';
+
+/** A capabilities.files entry. SDK 0.3: `platforms` limits it to some systems (Windows paths are `C:\\dir`). */
+export type Folder = string | { path: string; admin?: boolean; adminUnlessGroup?: string; create?: boolean; platforms?: Platform[] };
 
 /** A parameter of a job: the whole value must match `pattern`. */
 export interface JobParam {
@@ -173,6 +184,12 @@ export interface Manifest {
   minCore?: string;
   /** `{ ervisio: ">=0.5.0" }`: another spelling of `minCore`. Only `>=` or a bare version is understood. */
   requires?: { ervisio?: string };
+  /**
+   * SDK 0.3: the systems the plugin works on (Ervisio 0.6.1). Missing = Linux only. On another system the plugin is
+   * shown with a Linux/Windows mark but cannot be installed, enabled or run. Older cores refuse the field ("unknown
+   * field"), so add `minCore: "0.6.1"` with it.
+   */
+  platforms?: Platform[];
   /** sha256 of every file; written by the signer, never by hand. */
   files?: Record<string, string>;
   capabilities?: Capabilities;

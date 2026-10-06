@@ -305,6 +305,8 @@ export interface PluginSDK {
    * on older consoles it is undefined.
    */
   appOrigin: string;
+  /** SDK 0.3: the server's system, `'linux'` or `'windows'` (Ervisio 0.6.1; undefined on older consoles, which are Linux). */
+  platform: 'linux' | 'windows';
   plugin: { id: string; name: string; version: string };
   /** What this frame shows. */
   view: { kind: 'page' | 'widget'; id: string };
