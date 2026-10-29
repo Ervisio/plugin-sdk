@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - run: npm test
       - name: Pack the SDK
         run: |
           npm pack --pack-destination "$RUNNER_TEMP"
@@ -37,3 +38,4 @@ jobs:
           (cd dist && sha256sum -c hello-0.1.0.tar.gz.sha256)
           tar -tzf dist/hello-0.1.0.tar.gz | sort
           test "$(tar -tzf dist/hello-0.1.0.tar.gz | cut -d/ -f1 | sort -u)" = hello
+

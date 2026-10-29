@@ -61,11 +61,13 @@
     "README.md",
     "LICENSE",
     "scripts/create.mjs",
-    "template"
+    "template",
+    "scripts/release.mjs"
   ],
   "bin": {
     "ervisio-plugin-pack": "scripts/pack.mjs",
-    "create-ervisio-plugin": "scripts/create.mjs"
+    "create-ervisio-plugin": "scripts/create.mjs",
+    "ervisio-plugin-release": "scripts/release.mjs"
   },
   "peerDependencies": {
     "@types/react": "^18.3.0",
@@ -81,5 +83,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
   }
 }

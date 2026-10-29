@@ -7,12 +7,12 @@
 #      runs the package's "version" script if it has one (other files),
 #   2. adds a "## X.Y.Z" section to CHANGELOG.md (the notes you typed, or the
 #      commit subjects since the last release),
-#   3. commits "Release X.Y.Z", tags vX.Y.Z and pushes both,
+#   3. commits "Release X.Y.Z" locally,
 #   4. builds, packs, validates the manifest with Ervisio's own validator,
-#   5. creates the GitHub release with the tarball and its sha256,
+#   5. atomically pushes the validated version and tag, then creates the release,
 #   6. tells the registry (Ervisio/plugins) to pick it up now, when the
 #      REGISTRY_TOKEN secret exists (organization secret; without it the
-#      registry still finds the release within six hours).
+#      registry still finds the release on its next scheduled scan (normally within 15 minutes)).
 # Run on a pushed vX.Y.Z tag: steps 4-6 only (the old way still works).
 name: Plugin release
 
@@ -31,6 +31,14 @@ on:
         description: 'Ervisio release whose manifest validator is used'
         type: string
         default: 'main'
+      working-directory:
+        description: 'Plugin package directory, relative to the repository root'
+        type: string
+        default: '.'
+      sync-root-version:
+        description: 'Also update the root package version (plugin embedded in an application)'
+        type: boolean
+        default: false
     secrets:
       REGISTRY_TOKEN:
         required: false
@@ -38,6 +46,13 @@ on:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    concurrency:
+      group: plugin-release-${{ github.repository }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
     permissions:
       contents: write
     steps:
@@ -53,9 +68,13 @@ jobs:
         env:
           BUMP: ${{ inputs.bump }}
           NOTES: ${{ inputs.notes }}
+          SYNC_ROOT: ${{ inputs.sync-root-version }}
         run: |
           case "$BUMP" in patch|minor|major) ;; *) echo "::error::bump must be patch, minor or major"; exit 1;; esac
           if [ "$GITHUB_REF_TYPE" != branch ]; then echo "::error::run it on a branch (normally main)"; exit 1; fi
+          if [ "$GITHUB_REF_NAME" != "${{ github.event.repository.default_branch }}" ]; then
+            echo "::error::Release from the default branch; use a prerelease workflow for development branches."; exit 1
+          fi
           old="$(node -p "require('./plugin/manifest.json').version")"
           new="$(node -e '
             const [a,b,c] = process.argv[1].split("-")[0].split(".").map(Number);
@@ -76,6 +95,9 @@ jobs:
           # that writes its version in more files (an engine, a helper) updates
           # them there, reading $npm_package_version.
           npm version "$new" --no-git-tag-version --allow-same-version >/dev/null
+          if [ "$SYNC_ROOT" = true ]; then
+            (cd "$GITHUB_WORKSPACE" && npm version "$new" --no-git-tag-version --allow-same-version >/dev/null)
+          fi
           # Notes: what was typed, or the commit subjects since the last tag.
           body="$RUNNER_TEMP/section.md"
           if [ -n "$NOTES" ]; then
@@ -96,8 +118,6 @@ jobs:
           ' "$new" "$body"
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -am "Release $new"
-          git tag -a "v$new" -m "$new"
-          git push origin "HEAD:$GITHUB_REF_NAME" "v$new"
           echo "TAG=v$new" >> "$GITHUB_ENV"
 
       - name: Tag of this release
@@ -110,6 +130,8 @@ jobs:
         run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Build
         run: npm run build
+      - name: Tests
+        run: npm run --if-present test
       - name: Plugin's own release checks (npm run check, when it has one)
         run: npm run --if-present check
       - name: Pack (checks tag = manifest version = package.json version)
@@ -126,7 +148,7 @@ jobs:
           cache: false
       - name: Validate the manifest (Ervisio's own checks, throwaway key)
         run: |
-          (cd .ervisio-core/server && CGO_ENABLED=0 go build -o "$RUNNER_TEMP/plugin-sign" ./internal/modules/plugins/cmd/plugin-sign)
+          (cd "$GITHUB_WORKSPACE/.ervisio-core/server" && CGO_ENABLED=0 go build -o "$RUNNER_TEMP/plugin-sign" ./internal/modules/plugins/cmd/plugin-sign)
           id="$(node -p "require('./plugin/manifest.json').id")"
           version="$(node -p "require('./plugin/manifest.json').version")"
           echo "ID=$id" >> "$GITHUB_ENV"; echo "VERSION=$version" >> "$GITHUB_ENV"
@@ -147,6 +169,11 @@ jobs:
             p { print }' CHANGELOG.md > "$notes"
           if ! grep -q '[^[:space:]]' "$notes"; then echo "::error::CHANGELOG.md has no section for $VERSION"; exit 1; fi
           cat "$notes"
+      - name: Push the validated version and tag together
+        if: inputs.bump != ''
+        run: |
+          git tag -a "$TAG" -m "${TAG#v}"
+          git push --atomic origin "HEAD:$GITHUB_REF_NAME" "$TAG"
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -158,9 +185,19 @@ jobs:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
           if [ -z "$REGISTRY_TOKEN" ]; then
-            echo "::notice::REGISTRY_TOKEN is not set: the registry picks this release up within six hours (or run its Sync workflow)."
+            echo "::notice::REGISTRY_TOKEN is not set: the registry picks this release up on its next scheduled scan (normally within 15 minutes) (or run its Sync workflow)."
             exit 0
           fi
           GH_TOKEN="$REGISTRY_TOKEN" gh api repos/Ervisio/plugins/dispatches \
             -f event_type=plugin-release -f "client_payload[id]=$ID" -f "client_payload[repo]=$GITHUB_REPOSITORY"
           echo "Registry notified: $ID $VERSION"
+      - name: Release summary
+        if: success()
+        run: |
+          {
+            echo "## Released $ID $VERSION"
+            echo "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+            echo ""
+            echo "Marketplace: https://github.com/Ervisio/plugins/actions/workflows/sync.yml"
+          } >> "$GITHUB_STEP_SUMMARY"
+
