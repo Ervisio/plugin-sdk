@@ -3,7 +3,7 @@
 Plugins reach Ervisio users through the marketplace: the signed catalog that Plugins › Browse reads. The catalog is
 built by the registry repository, [Ervisio/plugins](https://github.com/Ervisio/plugins). You publish releases in your
 own repository; the registry picks them up, a maintainer reviews them, and the registry signs them with the Ervisio
-team key. You never sign anything and your repository needs no secrets.
+team key. You never sign anything. No new secret is needed for the local commands; they use your existing GitHub CLI login.
 
 ## Repository layout
 
@@ -24,14 +24,27 @@ release tarball. Both use `ervisio-plugin-pack`, installed with this package.
 
 ## Releasing
 
+Install the GitHub CLI and run `gh auth login` once. After merging and pushing your code:
+
+```sh
+npm run release -- patch
+npm run release -- minor --notes "Add the Logs tab"
+```
+
+The command refuses a dirty checkout or a local commit that differs from GitHub's default branch. It queues the
+GitHub release workflow and prints its URL. After the workflow has bumped the version, run `git pull --ff-only`.
+For Drive, run these commands inside `plugin/` (`npm --prefix plugin run release -- patch` also works).
+The SDK also exposes `ervisio-plugin-release` for projects using an updated SDK.
+
+
 On GitHub: **Actions › Release › Run workflow**, choose `patch`, `minor` or `major`, optionally type the release notes,
 and run it. That is all. The workflow (the reusable one in this repository, `.github/workflows/plugin-release.yml`):
 
 1. bumps the version in `plugin/manifest.json` and `package.json`,
 2. adds a `## X.Y.Z` section to `CHANGELOG.md`: the notes you typed, or the commit subjects since the last release
    (write commit subjects as you want them read: "Add the Logs tab", "Fix the stop button"),
-3. commits `Release X.Y.Z`, tags `vX.Y.Z` and pushes both,
-4. builds, validates the manifest with Ervisio's own validator and creates the GitHub release,
+3. commits `Release X.Y.Z` locally,
+4. builds, runs the plugin tests and checks, validates the manifest, then atomically pushes the version and tag and creates the GitHub release,
 5. tells the registry, which publishes it (see below).
 
 When a release asks for new permissions, say so in the notes and why. Pushing a `vX.Y.Z` tag yourself still works:
@@ -54,24 +67,34 @@ characters) as the release notes in Browse.
 
 ## Getting listed
 
-Open a pull request on [Ervisio/plugins](https://github.com/Ervisio/plugins) that adds your repository to
-`registry.json`, following its [CONTRIBUTING.md](https://github.com/Ervisio/plugins/blob/main/CONTRIBUTING.md). After
-that:
+Once the first release exists, run:
 
-* The release workflow tells the registry right away when the organization secret `REGISTRY_TOKEN` exists (a
-  fine-grained token allowed to run workflows on Ervisio/plugins: "Contents: read and write" there). Without it the
-  registry checks every listed repository every six hours.
-* **Plugins of the Ervisio team** (`"trust": "team"` in `registry.json`): a new version that asks for **no new
-  permissions** is signed and published at once, with no pull request; it is in the marketplace a few minutes after
-  you press Release. A version with new or wider permissions, and the first version of a plugin, become a pull
-  request that shows the manifest, the notes and the permission changes; a maintainer merges it, then it is
-  published.
-* **Community plugins**: every new version is a pull request, reviewed by a maintainer.
-* On publish the registry signs the plugin with the Ervisio team key (`manifest.sig` over the manifest, which lists the
-  sha256 of every file), attaches the signed tarball to a release of the registry, and publishes the new signed
-  catalog.
-* Every plugin in the catalog is signed and shows as verified. Ervisio installs only signed plugins by default, and
-  the consent dialog shows the user exactly the permissions your manifest asks for.
+```sh
+npm run marketplace -- "Monitoring"
+```
+
+Alternatively open **Ervisio/plugins → Actions → Register plugin**, enter the manifest id, repository and category.
+It validates the package and opens **one PR containing both the source and its first version**. Review and merge
+that PR once. Community repositories receive `trust: community`; only Ervisio repositories receive `trust: team`.
+Do not register an unreviewed plugin as team merely to avoid review.
+
+After registration:
+
+* The existing organization secret `REGISTRY_TOKEN`, when available to the plugin repository, notifies the registry
+  immediately. Without it the registry has a scheduled scan every 15 minutes (GitHub may delay scheduled runs).
+* Sync opens a version PR and explicitly dispatches both required checks; no closing/reopening is needed.
+* A trusted workflow on the registry's `main` automatically merges **bot-created team updates with exactly unchanged
+  capabilities, visibility, platforms and dependencies**, after both checks pass on that exact commit. It then
+  explicitly starts signing and catalog deployment. Branch protection remains enabled.
+* First versions, community updates and permission changes remain one reviewed PR. Permission reductions are also
+  deliberately reviewed; automatic approval never guesses whether a permission change is safe.
+* Repository rules are still enforced. If a rule requires human review even for routine team updates, the workflow
+  leaves the validated PR open with a warning. See the registry README for the one-time bot permission setup.
+* The registry signs packages and the catalog with the team key as before. The signing key stays in the registry.
+
+The reusable workflow supports `working-directory` (default `.`) and `sync-root-version` (default `false`) for an
+embedded plugin such as Drive. Keep plugin-specific version synchronization in an npm `version` hook.
 
 Permissions are reviewed carefully: ask for the narrowest commands, HTTP rules and folders that work. Anything that
 amounts to root on the machine (an `admin` command, a socket such as Docker's) needs a clear reason in the changelog.
+

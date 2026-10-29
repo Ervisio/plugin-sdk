@@ -115,7 +115,7 @@ Next:
   npm install
   npm run build          # dist/${id}/: load it from Ervisio > Plugins > Developer
 ${owner ? '' : `  gh repo create <owner>/plugin-${id} --public --source . --push\n`}
-Release: on GitHub, Actions > Release > Run workflow (patch / minor / major).
-Marketplace: the first time, add the plugin to registry.json in Ervisio/plugins
-  {"id": "${id}", "repo": "${owner || '<owner>'}/plugin-${id}", "trust": "team", "category": "..."}
-after that every release is picked up by itself.`);
+Release: npm run release -- patch (or Actions > Release > Run workflow).
+Marketplace: after the first release, npm run marketplace -- "Monitoring"
+  This opens one PR with registration and the first version together.
+  Later team updates with unchanged permissions are checked and merged automatically.`);

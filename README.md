@@ -31,7 +31,7 @@ npm run build        # dist/my-tool/index.js + manifest.json
 Add `--github Ervisio` to also create and push the GitHub repository (needs the `gh` CLI). Then turn on developer mode
 in Ervisio and load `dist/my-tool` from Plugins › Developer.
 
-Releasing is one button: **Actions › Release › Run workflow** (patch / minor / major). See
+After pushing your code, run `npm run release -- patch` (requires `gh auth login`), or use **Actions › Release › Run workflow** (patch / minor / major). See
 [docs/publishing.md](docs/publishing.md).
 
 The package is not on npm yet; the template depends on it through git:
@@ -57,3 +57,4 @@ A complete plugin built with this SDK: [Ervisio/plugin-docker](https://github.co
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
