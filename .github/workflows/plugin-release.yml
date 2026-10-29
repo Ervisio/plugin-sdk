@@ -172,7 +172,8 @@ jobs:
       - name: Push the validated version and tag together
         if: inputs.bump != ''
         run: |
-          git tag -a "$TAG" -m "${TAG#v}"
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            tag -a "$TAG" -m "${TAG#v}"
           git push --atomic origin "HEAD:$GITHUB_REF_NAME" "$TAG"
       - name: Publish the release
         env:
