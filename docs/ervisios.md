@@ -1,11 +1,12 @@
 # Native ErvisiOS plugin pages
 
-ErvisiOS opens every existing plugin page as an application. A plugin without native metadata keeps its existing page, commands, permissions and sandbox in a desktop window.
+Ervisio 0.7.0 and later includes ErvisiOS, which opens every existing plugin page as an application. A plugin without native metadata keeps its existing page, commands, permissions and sandbox in a desktop window. SDK 0.4.0 describes contract version 4.
 
 To provide a native desktop layout, keep the public page ID and declare an alternate registered view:
 
 ```json
 {
+  "minCore": "0.7.0",
   "contributes": {
     "pages": [
       {
@@ -32,7 +33,7 @@ export default function activate(sdk: PluginSDK) {
 
 The classic console renders `containers`; ErvisiOS renders `containers-desktop`. Links, `sdk.open('containers')`, app shortcuts and virtual folders continue to use the public page ID. The alternate view is not a separate menu entry. A missing native metadata field uses the normal view automatically.
 
-Contract version 4 exposes `sdk.shell?.mode` (`classic` or `ervisios`) and the same value on `sdk.view.shell`. The runtime also sets `document.documentElement.dataset.shell`, so CSS can use `[data-shell="ervisios"]`. Older consoles omit these features. They reject unknown manifest fields, so distribute the native manifest with the ErvisiOS-capable core branch; retain a legacy manifest for older released cores until a minimum core release is assigned.
+Contract version 4 exposes `sdk.shell?.mode` (`classic` or `ervisios`) and the same value on `sdk.view.shell`. The runtime also sets `document.documentElement.dataset.shell`, so CSS can use `[data-shell="ervisios"]`. Set `minCore: "0.7.0"` on manifests containing native metadata. Older consoles omit these SDK features and reject the unknown manifest field; keep older published plugin releases available for those consoles. Classic mode in Ervisio 0.7.0 still renders the normal registered view from the same native-capable package.
 
 Native layout guidelines:
 

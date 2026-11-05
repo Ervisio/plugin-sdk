@@ -1,5 +1,6 @@
 /**
  * Types of the Ervisio plugin SDK (contract version 4). The SDK object is handed to your module's activate(sdk).
+ * SDK 0.4's native page metadata, shell context and visibility lifecycle require Ervisio 0.7.0 or later.
  * SDK 0.2 needs Ervisio 0.5 or later for large transfers, saveFile, the activity log, environments and approved
  * hosts, and for api.jobs / api.notify; on older consoles those members are missing: check before you use them.
  * Reference: docs/sdk.md in https://github.com/Ervisio/plugin-sdk.

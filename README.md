@@ -37,7 +37,7 @@ After pushing your code, run `npm run release -- patch` (requires `gh auth login
 The package is not on npm yet; the template depends on it through git:
 
 ```json
-"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.3.0" }
+"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.4.0" }
 ```
 
 npm 12 refuses git dependencies by default; the template's `.npmrc` allows them for direct dependencies only

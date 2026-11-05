@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 - 2026-11-05
+
+Contract version 4 for Ervisio 0.7.0 and later.
+
+- Optional native ErvisiOS page metadata and alternate registered views, preserving the classic page.
+- Shell context and the first-party AI assistant's deterministic local UI command interface.
+- Optional visibility lifecycle API for minimized windows and hidden browser tabs.
+- Native plugin tutorial, compatibility requirements and updated project template dependency.
+
 ## 0.3.0
 
 Windows support (Ervisio 0.6). Plugins written for 0.2 run unchanged on Linux; the contract version stays 3.
