@@ -1,5 +1,5 @@
 /**
- * Types of manifest.json (SDK 0.2, contract version 3). The reference, with every validation rule, is
+ * Types of manifest.json (contract version 4). The reference, with every validation rule, is
  * https://github.com/Ervisio/ervisio/blob/main/docs/api/plugins.md ("manifest.json").
  */
 
@@ -158,7 +158,8 @@ export interface Contribution {
 }
 
 export interface Contributes {
-  pages?: Contribution[];
+  /** Native desktop view is optional. Without it ErvisiOS opens the existing page in a window. */
+  pages?: Array<Contribution & { ervisios?: { view: string } }>;
   widgets?: Contribution[];
   snippets?: Array<{ name: string; command: string }>;
 }

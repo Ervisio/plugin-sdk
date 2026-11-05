@@ -1,4 +1,4 @@
-# Plugin SDK 0.2, contract version 3
+# Plugin SDK, contract version 4
 
 SDK 0.2 adds large transfers, `saveFile`, the activity log, environments, approved hosts, background jobs and notifications
 (see "SDK 0.2" below; they need Ervisio 0.5 or later). Everything from SDK 0.1 works unchanged.
@@ -116,7 +116,8 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 
 | member | description |
 |---|---|
-| `version` | `3`. Check it if your plugin also supports older consoles: `if (sdk.version < 3) …` (v3 adds `api.http`, `api.httpStream`, `api.pty`, `files.mkdir`, `files.remove`). |
+| `version` | `4`. Check optional features when supporting older consoles. Contract v4 adds native ErvisiOS shell context; v3 added `api.http`, `api.httpStream`, `api.pty`, `files.mkdir`, `files.remove`. |
+| `shell` | Optional `{mode, command(text)}`. `mode` is `classic` or `ervisios`; local commands are reserved to plugin `ai`. See [ErvisiOS](ervisios.md). |
 | `plugin` | `{ id, name, version }`. |
 | `appOrigin` | The console's origin as the user reaches it (`https://host:9090`, or the proxy's). Use it for webhook URLs: `location.origin` is opaque inside the frame. Ervisio 0.5.0 and later. |
 | `platform` | `'linux'` or `'windows'`: the server's system. Ervisio 0.6.1 and later; undefined (Linux) on older consoles. See "Windows" below. |
@@ -230,7 +231,7 @@ widget removed, the plugin reloaded or disabled), and a frame has at most 32 str
 
 ## SDK 0.2
 
-Everything here needs Ervisio 0.5 or later. The contract version stays 3 (`sdk.version === 3`), so check for the
+The features in this section need Ervisio 0.5 or later and were added in contract version 3. Check for the
 member you need: `if (sdk.api.jobs) …`, `if (sdk.envs) …`. The reference for the manifest fields is
 [docs/api/plugins.md](https://github.com/Ervisio/ervisio/blob/main/docs/api/plugins.md); the daemon side of each
 feature has its own page in the Ervisio repository (`docs/api/jobs.md`, `notify.md`, `environments.md`).
@@ -556,3 +557,7 @@ access is limited to
 A plugin can still show the user whatever it likes inside its frame, and it can send data it was given to a declared
 network host, or away by navigating its own frame (the app then stops the frame). Install plugins you trust; signed
 plugins are verified against the Ervisio team key.
+
+## Native ErvisiOS views (contract v4)
+
+See [Native ErvisiOS plugin pages](ervisios.md) for the optional `contributes.pages[].ervisios.view` metadata, shared registration pattern, shell context and compatibility requirements. Existing pages open in desktop windows without changes.

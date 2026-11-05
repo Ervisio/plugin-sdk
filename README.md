@@ -1,7 +1,7 @@
 # Ervisio plugin SDK
 
 Types, a React shim, a Vite preset and a project template for building [Ervisio](https://github.com/Ervisio/ervisio)
-plugins (plugin SDK contract version 3).
+plugins (plugin SDK contract version 4).
 
 An Ervisio plugin is a folder with a `manifest.json` and one self-contained ES module. Its code runs in a sandboxed
 frame and reaches the machine only through what the manifest declares: commands, HTTP APIs on unix sockets, folders.

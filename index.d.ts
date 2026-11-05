@@ -1,5 +1,5 @@
 /**
- * Types of the Ervisio plugin SDK 0.2 (contract version 3). The SDK object is handed to your module's activate(sdk).
+ * Types of the Ervisio plugin SDK (contract version 4). The SDK object is handed to your module's activate(sdk).
  * SDK 0.2 needs Ervisio 0.5 or later for large transfers, saveFile, the activity log, environments and approved
  * hosts, and for api.jobs / api.notify; on older consoles those members are missing: check before you use them.
  * Reference: docs/sdk.md in https://github.com/Ervisio/plugin-sdk.
@@ -297,8 +297,14 @@ export type View<P = { sdk: PluginSDK }> =
   | { render(container: HTMLElement, sdk: PluginSDK): void | (() => void) };
 
 export interface PluginSDK {
-  /** 3 for this contract. Check it when you also support older consoles. */
+  /** 4 for this contract. Check optional features when you also support older consoles. */
   version: number;
+  /** Contract v4. Missing on older consoles; use optional chaining for backwards compatibility. */
+  shell?: {
+    mode: 'classic' | 'ervisios';
+    /** Deterministic local UI commands, reserved to the first-party AI plugin. No OS shell or RPC access. */
+    command(text: string): Promise<{ handled: boolean; message?: string }>;
+  };
   /**
    * The console's origin as the user reaches it (`https://host:9090`, or the proxy's), no path. Use it to build URLs
    * such as webhooks (`sdk.appOrigin + hook.path`): `location.origin` is opaque inside the sandboxed frame. Ervisio 0.5.0;
@@ -309,7 +315,7 @@ export interface PluginSDK {
   platform: 'linux' | 'windows';
   plugin: { id: string; name: string; version: string };
   /** What this frame shows. */
-  view: { kind: 'page' | 'widget'; id: string };
+  view: { kind: 'page' | 'widget'; id: string; shell?: 'classic' | 'ervisios' };
   /** React 18, shared by the runtime and the UI kit. Do not bundle your own React. */
   react: typeof ReactNS;
   /** The app's component kit (Button, Dialog, Table, toast, ...). */
@@ -382,5 +388,5 @@ export type Activate = (sdk: PluginSDK) => void | Promise<void>;
 export declare function setSdk(sdk: PluginSDK): void;
 /** Returns the SDK object stored by setSdk(); throws before activate() ran. */
 export declare function getSdk(): PluginSDK;
-/** The SDK contract version these types describe (3). */
+/** The SDK contract version these types describe (4). */
 export declare const SDK_VERSION: number;

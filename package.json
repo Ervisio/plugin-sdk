@@ -1,7 +1,7 @@
 {
   "name": "@ervisio/plugin-sdk",
   "version": "0.3.0",
-  "description": "Types, React shim and Vite preset for Ervisio plugins (plugin SDK contract version 3).",
+  "description": "Types, React shim and Vite preset for Ervisio plugins (plugin SDK contract version 4).",
   "type": "module",
   "license": "MIT",
   "author": "Fonlogen",
