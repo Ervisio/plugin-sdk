@@ -118,6 +118,7 @@ types (`Manifest`, `Capabilities`, `Command`, `HttpApi`, `Folder`, `Contributes`
 |---|---|
 | `version` | `4`. Check optional features when supporting older consoles. Contract v4 adds native ErvisiOS shell context; v3 added `api.http`, `api.httpStream`, `api.pty`, `files.mkdir`, `files.remove`. |
 | `shell` | Optional `{mode, command(text)}`. `mode` is `classic` or `ervisios`; local commands are reserved to plugin `ai`. See [ErvisiOS](ervisios.md). |
+| `visibility` | Optional `{readonly hidden, onChange(callback)}`. Hidden when the browser tab is hidden or the ErvisiOS window is minimized. `onChange` receives the current hidden state on changes and returns an unsubscribe function. See [ErvisiOS lifecycle](ervisios.md#minimized-window-lifecycle). |
 | `plugin` | `{ id, name, version }`. |
 | `appOrigin` | The console's origin as the user reaches it (`https://host:9090`, or the proxy's). Use it for webhook URLs: `location.origin` is opaque inside the frame. Ervisio 0.5.0 and later. |
 | `platform` | `'linux'` or `'windows'`: the server's system. Ervisio 0.6.1 and later; undefined (Linux) on older consoles. See "Windows" below. |

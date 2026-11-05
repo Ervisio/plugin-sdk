@@ -43,3 +43,21 @@ Native layout guidelines:
 - Use existing `sdk.api` and file capabilities. Native views have the same opaque-origin iframe and broker permissions as classic views.
 
 The first-party AI plugin can call `sdk.shell?.command(text)` before contacting its provider. This resolves strict local UI requests such as opening an app or changing theme and returns `{handled, message}`. Unknown requests return `{handled:false}` and continue through the existing AI provider. This API does not execute operating-system commands, access files or grant administrator rights. Other plugin IDs are refused by the host broker.
+
+## Minimized window lifecycle
+
+Minimizing keeps the frame and its state mounted. The runtime marks it hidden, pauses repeating browser timers and animation frames, and resumes them when the window is restored. A hidden browser tab has the same effect. Pending requests, one-shot timers, promises and saves may finish; minimizing does not cancel an operation or stop a server service.
+
+Use the optional `sdk.visibility` API to pause additional subscriptions or workers that need explicit control. `hidden` is a live getter; read it when starting optional work rather than copying it at activation time. `onChange` returns an unsubscribe function and does not call the listener immediately:
+
+```ts
+const stop = sdk.visibility?.onChange((hidden) => {
+  if (hidden) pauseLiveUpdates();
+  else resumeLiveUpdates();
+});
+if (!sdk.visibility?.hidden) resumeLiveUpdates();
+// During view cleanup:
+stop?.();
+```
+
+Older consoles omit this API. Keep optional chaining, preserve unsaved state, and clean up subscriptions when a view closes. Native views and classic plugin pages use the same lifecycle contract.

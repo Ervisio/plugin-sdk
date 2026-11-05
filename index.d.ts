@@ -305,6 +305,13 @@ export interface PluginSDK {
     /** Deterministic local UI commands, reserved to the first-party AI plugin. No OS shell or RPC access. */
     command(text: string): Promise<{ handled: boolean; message?: string }>;
   };
+  /** Contract v4. Reflects a hidden browser tab or a minimized application window. */
+  visibility?: {
+    /** Read the current value when needed; it changes without replacing the SDK object. */
+    readonly hidden: boolean;
+    /** Subscribe to visibility changes; call the returned function when disposing the view. */
+    onChange(callback: (hidden: boolean) => void): () => void;
+  };
   /**
    * The console's origin as the user reaches it (`https://host:9090`, or the proxy's), no path. Use it to build URLs
    * such as webhooks (`sdk.appOrigin + hook.path`): `location.origin` is opaque inside the sandboxed frame. Ervisio 0.5.0;
