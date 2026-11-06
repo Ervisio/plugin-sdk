@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 - 2026-11-06
+
+- Add a shared, theme-aware destination editor for local folders, saved SFTP/SMB, HTTP, ErvisioDrive, ErvisioRepo and S3.
+- Export the typed 7.0.4 destination configuration and an explicit picker-result parser. The component grants no filesystem access and performs no uploads.
+- Keep the SDK wire contract at version 5; destinations are optional library exports.
+
 ## 0.5.0
 
 - Add optional account-private revisioned documents with renewable update leases.

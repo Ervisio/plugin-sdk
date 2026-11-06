@@ -37,7 +37,7 @@ After pushing your code, run `npm run release -- patch` (requires `gh auth login
 The package is not on npm yet; the template depends on it through git:
 
 ```json
-"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.5.0" }
+"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.6.0" }
 ```
 
 npm 12 refuses git dependencies by default; the template's `.npmrc` allows them for direct dependencies only
@@ -64,6 +64,13 @@ MIT, see [LICENSE](LICENSE).
 
 Feature-check `sdk.data` and `sdk.files.pick` when supporting older consoles. The host owns both features; do not bundle a separate file-manager app.
 
+For host filesystem fields, use `PathInput` from `@ervisio/plugin-sdk/paths`:
+`<PathInput label="SQLite database" value={path} onPathChange={setPath} mode="file" />`.
+It keeps manual paste available and adds Browse using the shared host chooser. Use `mode="folder"`
+for directories or `mode="save"` for a filename and destination. A returned path grants no file
+permissions. Container filesystems and paired hosts must use their own filesystem browser;
+never pass a host-selected path to a different machine or a container.
+
 ```ts
 if (sdk.files.pick) {
   const selected = await sdk.files.pick({ mode: 'folder', title: 'Backup destination' });
@@ -87,3 +94,7 @@ Use an empty revision only when creating a new key. An overwrite or removal need
 Long-running updates can call `claim(key, owner)`, where `owner` is a random 32-character lowercase hexadecimal identifier. Renew every 30 seconds and call `release` in a `finally` block. Claims expire after two minutes of server time. While claimed, `write` also receives the same owner as its fourth argument; another view cannot overwrite or delete the active document. Claims require an existing key.
 
 The optional `sdk.view.surface === 'assistant'` identifies a compact assistant surface. Keep the same authentication, persistence and permissions as the full page, and adapt the layout to its available width.
+
+### Shared destination fields
+
+`import { DestinationFields, type Destination } from '@ervisio/plugin-sdk/destinations'` provides the same destination configuration in Backup and Database exports. Render it with `value`, `onChange`, safe saved `connections`, and optional `allowRetention`. It uses the host folder chooser without granting access to files, keeps credential inputs write-only, and does not perform network uploads. The plugin must separately declare the trusted account-owned delivery/backup command in its manifest. External HTTP/ErvisioDrive/ErvisioRepo uploads have no automatic retention. S3 cleanup is explicitly opt-in and requires a conditional-delete-capable endpoint. The backend integration requires Ervisio 7.0.4.
