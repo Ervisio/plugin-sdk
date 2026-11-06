@@ -1,7 +1,7 @@
 {
   "name": "@ervisio/plugin-sdk",
-  "version": "0.5.0",
-  "description": "Types, React shim and Vite preset for Ervisio plugins (plugin SDK contract version 4).",
+  "version": "0.6.0",
+  "description": "Types, shared destination fields, React shim and Vite preset for Ervisio plugins (SDK contract 5).",
   "type": "module",
   "license": "MIT",
   "author": "Fonlogen",
@@ -44,7 +44,11 @@
       "types": "./vite.d.ts",
       "default": "./vite.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./destinations": {
+      "types": "./destinations.d.ts",
+      "default": "./destinations.js"
+    }
   },
   "files": [
     "index.js",
@@ -62,7 +66,9 @@
     "LICENSE",
     "scripts/create.mjs",
     "template",
-    "scripts/release.mjs"
+    "scripts/release.mjs",
+    "destinations.js",
+    "destinations.d.ts"
   ],
   "bin": {
     "ervisio-plugin-pack": "scripts/pack.mjs",
