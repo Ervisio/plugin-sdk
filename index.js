@@ -18,4 +18,4 @@ export function getSdk() {
 }
 
 /** The SDK contract version these types describe. */
-export const SDK_VERSION = 4;
+export const SDK_VERSION = 5;

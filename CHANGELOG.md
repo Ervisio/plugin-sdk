@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- Add optional account-private revisioned documents with renewable update leases.
+- Add the host file/folder/save chooser without granting extra filesystem permissions.
+- Describe the compact assistant rendering surface while keeping older SDK objects usable.
+
 ## 0.4.0 - 2026-11-05
 
 Contract version 4 for Ervisio 0.7.0 and later.

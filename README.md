@@ -37,7 +37,7 @@ After pushing your code, run `npm run release -- patch` (requires `gh auth login
 The package is not on npm yet; the template depends on it through git:
 
 ```json
-"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.4.0" }
+"devDependencies": { "@ervisio/plugin-sdk": "github:Ervisio/plugin-sdk#v0.5.0" }
 ```
 
 npm 12 refuses git dependencies by default; the template's `.npmrc` allows them for direct dependencies only
@@ -58,3 +58,32 @@ A complete plugin built with this SDK: [Ervisio/plugin-docker](https://github.co
 
 MIT, see [LICENSE](LICENSE).
 
+
+
+## Account-private documents and server file chooser (contract v5)
+
+Feature-check `sdk.data` and `sdk.files.pick` when supporting older consoles. The host owns both features; do not bundle a separate file-manager app.
+
+```ts
+if (sdk.files.pick) {
+  const selected = await sdk.files.pick({ mode: 'folder', title: 'Backup destination' });
+  if (selected) onChosenFolder(selected.path);
+}
+```
+
+The chooser supports `file`, `folder` and `save`. `initialDirectory`, `initialName` and `title` are optional. Cancellation resolves `null`. Paths identify files on the managed server or a saved SFTP/SMB connection. Choosing a path grants no additional `capabilities.files` access: existing read/write and command rules still apply. A hidden or minimized plugin cannot open the chooser, and closing its frame cancels an outstanding dialog.
+
+`sdk.data` stores documents on the server, isolated by authenticated system account and plugin ID, without requiring a writable home directory. Keys are relative identifiers such as `chats/abc.json`, not filesystem paths. Limits are 4 MiB per document, 64 MiB and 500 documents per account/plugin; storage errors must be shown to the user.
+
+```ts
+if (sdk.data) {
+  const document = await sdk.data.read('settings.json');
+  await sdk.data.write('settings.json', JSON.stringify(nextSettings), document.revision);
+}
+```
+
+Use an empty revision only when creating a new key. An overwrite or removal needs the exact revision returned by `read` or the preceding `write`. A conflict means another view saved newer content: preserve the unsaved draft and reload, rather than silently overwriting it. `list()` returns document metadata. `remove(key, revision)` removes only that private document.
+
+Long-running updates can call `claim(key, owner)`, where `owner` is a random 32-character lowercase hexadecimal identifier. Renew every 30 seconds and call `release` in a `finally` block. Claims expire after two minutes of server time. While claimed, `write` also receives the same owner as its fourth argument; another view cannot overwrite or delete the active document. Claims require an existing key.
+
+The optional `sdk.view.surface === 'assistant'` identifies a compact assistant surface. Keep the same authentication, persistence and permissions as the full page, and adapt the layout to its available width.

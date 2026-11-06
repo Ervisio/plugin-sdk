@@ -298,7 +298,7 @@ export type View<P = { sdk: PluginSDK }> =
   | { render(container: HTMLElement, sdk: PluginSDK): void | (() => void) };
 
 export interface PluginSDK {
-  /** 4 for this contract. Check optional features when you also support older consoles. */
+  /** 5 for this contract. Check optional features when you also support older consoles. */
   version: number;
   /** Contract v4. Missing on older consoles; use optional chaining for backwards compatibility. */
   shell?: {
@@ -323,7 +323,22 @@ export interface PluginSDK {
   platform: 'linux' | 'windows';
   plugin: { id: string; name: string; version: string };
   /** What this frame shows. */
-  view: { kind: 'page' | 'widget'; id: string; shell?: 'classic' | 'ervisios' };
+  view: { kind: 'page' | 'widget'; id: string; shell?: 'classic' | 'ervisios'; surface?: 'assistant' };
+  /** Contract v5: private, server-persisted documents for this account and this plugin only.
+   * An empty revision creates a document; replacement/deletion needs its exact prior revision.
+   * Limits: 4 MiB per document, 64 MiB and 500 documents per account/plugin.
+   * A renewable lease prevents a second view from modifying a conversation during a reply.
+   * No access to host files or another plugin is granted. Feature-check on older consoles.
+   */
+  data?: {
+    read(key: string): Promise<{text:string;revision:string}>;
+    write(key: string, text: string, revision?: string, owner?: string): Promise<{revision:string}>;
+    list(): Promise<{path:string;type:string;size:number}[]>;
+    remove(key: string, revision: string): Promise<void>;
+    /** owner is a cryptographically random 32-character lowercase hex string. Renew every 30 s. */
+    claim(key: string, owner: string): Promise<{expires:number}>;
+    release(key: string, owner: string): Promise<void>;
+  };
   /** React 18, shared by the runtime and the UI kit. Do not bundle your own React. */
   react: typeof ReactNS;
   /** The app's component kit (Button, Dialog, Table, toast, ...). */
@@ -366,6 +381,11 @@ export interface PluginSDK {
     request(host: string, o?: { scheme?: 'https' | 'http' }): Promise<{ host: string; approved: true; reloading: boolean }>;
   };
   files: {
+    /** Contract v5: opens the host's chooser. Cancel resolves null. Returning a path does not
+     * expand capabilities.files: subsequent reads/writes still need the declared permissions.
+     * Available only while this plugin's view is active. Feature-check on older consoles.
+     */
+    pick?(options: {mode:'file'|'folder'|'save';title?:string;initialDirectory?:string;initialName?:string}): Promise<{path:string}|null>;
     read(path: string, o?: FilesEnvOptions): Promise<string>;
     readBytes(path: string, o?: FilesEnvOptions): Promise<Uint8Array>;
     write(path: string, data: string | Uint8Array, o?: FilesEnvOptions): Promise<void>;
@@ -396,5 +416,5 @@ export type Activate = (sdk: PluginSDK) => void | Promise<void>;
 export declare function setSdk(sdk: PluginSDK): void;
 /** Returns the SDK object stored by setSdk(); throws before activate() ran. */
 export declare function getSdk(): PluginSDK;
-/** The SDK contract version these types describe (4). */
+/** The SDK contract version these types describe (5). */
 export declare const SDK_VERSION: number;
