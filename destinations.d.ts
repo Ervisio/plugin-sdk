@@ -29,8 +29,10 @@ export interface Destination {
   sessionToken?: string;
   hasAPIKey?: boolean;
   hasCredentials?: boolean;
+  hasSessionToken?: boolean;
   clearAPIKey?: boolean;
   clearCredentials?: boolean;
+  clearSessionToken?: boolean;
 }
 export interface DestinationConnection { id: string; name: string; kind: string; path?: string }
 export interface DestinationFieldsProps {
