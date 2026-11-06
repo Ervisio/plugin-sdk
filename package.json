@@ -48,6 +48,10 @@
     "./destinations": {
       "types": "./destinations.d.ts",
       "default": "./destinations.js"
+    },
+    "./paths": {
+      "types": "./paths.d.ts",
+      "default": "./paths.js"
     }
   },
   "files": [
@@ -68,7 +72,9 @@
     "template",
     "scripts/release.mjs",
     "destinations.js",
-    "destinations.d.ts"
+    "destinations.d.ts",
+    "paths.js",
+    "paths.d.ts"
   ],
   "bin": {
     "ervisio-plugin-pack": "scripts/pack.mjs",

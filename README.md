@@ -64,6 +64,13 @@ MIT, see [LICENSE](LICENSE).
 
 Feature-check `sdk.data` and `sdk.files.pick` when supporting older consoles. The host owns both features; do not bundle a separate file-manager app.
 
+For host filesystem fields, use `PathInput` from `@ervisio/plugin-sdk/paths`:
+`<PathInput label="SQLite database" value={path} onPathChange={setPath} mode="file" />`.
+It keeps manual paste available and adds Browse using the shared host chooser. Use `mode="folder"`
+for directories or `mode="save"` for a filename and destination. A returned path grants no file
+permissions. Container filesystems and paired hosts must use their own filesystem browser;
+never pass a host-selected path to a different machine or a container.
+
 ```ts
 if (sdk.files.pick) {
   const selected = await sdk.files.pick({ mode: 'folder', title: 'Backup destination' });
